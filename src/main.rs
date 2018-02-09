@@ -1,17 +1,19 @@
 extern crate unwort;
 extern crate clap;
 
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, ArgMatches, App, SubCommand};
 use unwort::Dictionary;
 use unwort::german::Dictionary as German;
 
 pub fn string_to_dict(dict_name: &str) -> Option<Box<Dictionary>> {
 	match dict_name.to_lowercase().as_str() {
 		"german" => {
-			if let Ok(ger) = German::new("dict/german") {
-				Some(Box::new(ger))
-			} else {
-				None
+			match German::new("dict/german") {
+				Ok(ger) => Some(Box::new(ger)),
+				Err(e) => {
+					println!("Could not create German dictionary: {}", e);
+					None
+				}
 			}
 		},
 		other => {
@@ -39,6 +41,16 @@ fn main() {
 	);
 	let matches = app.get_matches();
 
-	let dictionary = matches.value_of("DICTIONARY").unwrap();
-	let dictionary = string_to_dict(dictionary).unwrap();
+	let dictionary = matches.value_of("DICTIONARY").expect("Could not read dictionary variable");
+	let dictionary = string_to_dict(dictionary).expect("Cannot continue without a valid dictionary");
+
+	if let Some(m) = matches.subcommand_matches("add") {
+		add(dictionary, m);
+	}
+}
+
+fn add(mut dict: Box<Dictionary>, args: &ArgMatches) {
+	for ref s in args.values_of("ENTRIES").expect("ENTRIES could not be read") {
+		dict.add(&s);
+	}
 }
