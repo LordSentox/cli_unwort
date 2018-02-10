@@ -39,18 +39,45 @@ fn main() {
 			 .index(1)
 		)
 	);
+	app = app.subcommand(SubCommand::with_name("contains").about("Checks if a word or words are contained in the dictionary")
+		.arg(Arg::with_name("ENTRIES")
+			.multiple(true)
+			.required(true)
+			.help("The list of entries to check")
+			.index(1)
+		)
+	);
+
 	let matches = app.get_matches();
 
 	let dictionary = matches.value_of("DICTIONARY").expect("Could not read dictionary variable");
-	let dictionary = string_to_dict(dictionary).expect("Cannot continue without a valid dictionary");
+	let mut dictionary = string_to_dict(dictionary).expect("Cannot continue without a valid dictionary");
 
 	if let Some(m) = matches.subcommand_matches("add") {
-		add(dictionary, m);
+		add(&mut dictionary, m);
+	}
+	if let Some(m) = matches.subcommand_matches("contains") {
+		contains(&mut dictionary, m);
 	}
 }
 
-fn add(mut dict: Box<Dictionary>, args: &ArgMatches) {
+fn add(dict: &mut Box<Dictionary>, args: &ArgMatches) {
 	for ref s in args.values_of("ENTRIES").expect("ENTRIES could not be read") {
 		dict.add(&s);
+	}
+}
+
+fn contains(dict: &mut Box<Dictionary>, args: &ArgMatches) {
+	let mut ok = true;
+
+	for ref s in args.values_of("ENTRIES").expect("ENTRIES could not be read") {
+		if !dict.contains(&s) {
+			println!("'{}' not found in the dictionary", &s);
+			ok = false;
+		}
+	}
+
+	if ok {
+		println!("All words have been found");
 	}
 }
